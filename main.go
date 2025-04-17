@@ -1,11 +1,10 @@
 package main
 
 import (
-	_ "encoding/json"
 	"fmt"
-	"gewechat-go/gewechat_client"
 	"os"
 )
+import "github.com/fenglangyj/gewechat-go/gewechat_client"
 
 func main() {
 	// 配置参数
