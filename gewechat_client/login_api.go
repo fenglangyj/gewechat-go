@@ -16,14 +16,13 @@ func NewLoginApi(c *GewechatClient) *LoginApi {
 
 // GetToken 获取tokenId
 func (loginApi *LoginApi) GetToken() (map[string]interface{}, error) {
-	//return util.PostJSON(loginApi.client.baseURL, "/tools/getTokenId", loginApi.client.token, nil)
 	return loginApi.client.PostJson("/tools/getTokenId", nil)
 }
 
 // SetCallback 设置微信消息的回调地址
-func (loginApi *LoginApi) SetCallback(token, callbackURL string) (map[string]interface{}, error) {
+func (loginApi *LoginApi) SetCallback(callbackURL string) (map[string]interface{}, error) {
 	param := map[string]interface{}{
-		"token":       token,
+		"token":       loginApi.client.token,
 		"callbackUrl": callbackURL,
 	}
 	return loginApi.client.PostJson("/tools/setCallback", param)
@@ -61,6 +60,12 @@ func (loginApi *LoginApi) DialogLogin(appID string) (map[string]interface{}, err
 		"appId": appID,
 	}
 	return loginApi.client.PostJson("/login/dialogLogin", param)
+}
+
+// DeviceList 查看设备列表
+func (loginApi *LoginApi) DeviceList() (map[string]interface{}, error) {
+	param := map[string]interface{}{}
+	return loginApi.client.PostJson("/login/deviceList", param)
 }
 
 // CheckOnline 检查是否在线
@@ -109,23 +114,15 @@ func (loginApi *LoginApi) Login(appID string) (string, string, error) {
 		if err != nil {
 			return "", "", err
 		}
-		if result["ret"] == float64(200) && result["data"] != nil {
-			fmt.Printf("AppID: %s 已在线，无需登录\n", inputAppID)
+		if result["ret"] == float64(200) && result["data"] == true {
 			return inputAppID, "", nil
-		} else {
-			fmt.Printf("AppID: %s 未在线，执行登录流程\n", inputAppID)
 		}
 	}
 
-	// 2. 获取初始二维码
+	// 2. 获取登录二维码
 	appID, uuid, err := loginApi.GetAndValidateQR(appID)
 	if err != nil {
 		return "", "获取二维码失败", err
-	}
-
-	if inputAppID == "" {
-		fmt.Printf("AppID: %s, 请保存此app_id，下次登录时继续使用!\n", appID)
-		fmt.Println("新设备登录平台，次日凌晨会掉线一次，重新登录时需使用原来的app_id取码，否则新app_id仍然会掉线，登录成功后则可以长期在线")
 	}
 
 	// 这里可以添加生成和打印二维码的逻辑
@@ -182,6 +179,5 @@ func (loginApi *LoginApi) Login(appID string) (string, string, error) {
 		}
 		retryCount++
 	}
-
 	return appID, "登录超时，请重新尝试", nil
 }
